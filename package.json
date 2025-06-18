@@ -1,0 +1,25 @@
+{
+  "name": "sp108e_led_google_voice_controle",
+  "version": "1.0.0",
+  "description": "Control SP108E LED controller via Google Voice commands",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/combo666/sp108e_led_google_voice_controle.git"
+  },
+    "dependencies": {
+    "axios": "^1.6.0",
+    "express": "^4.18.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/combo666/sp108e_led_google_voice_controle/issues"
+  },
+  "homepage": "https://github.com/combo666/sp108e_led_google_voice_controle#readme"
+}
