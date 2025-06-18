@@ -1,62 +1,78 @@
 const express = require("express");
-const axios = require("axios");
+const { sp108e } = require("sp108e"); // local modified lib if needed
+
+const client = new sp108e({ host: "192.168.10.167", port: 8189 });
 const app = express();
-const port = 3000;
 
-// Your SP108E controller IP
-const CONTROLLER_IP = "192.168.10.167";
+app.get("/on", async (req, res) => {
+  await client.on();
+  res.send("LED ON");
+});
 
-// List of commands
-const commands = {
-  on: "/win&T=1",
-  off: "/win&T=0",
+app.get("/off", async (req, res) => {
+  await client.off();
+  res.send("LED OFF");
+});
 
-  // Solid colors
-  red: "/win&R=255&G=0&B=0",
-  green: "/win&R=0&G=255&B=0",
-  blue: "/win&R=0&G=0&B=255",
-  white: "/win&R=255&G=255&B=255",
-  yellow: "/win&R=255&G=255&B=0",
-  purple: "/win&R=128&G=0&B=128",
-  cyan: "/win&R=0&G=255&B=255",
+app.get("/color/:hex", async (req, res) => {
+  await client.setColor(req.params.hex);
+  res.send(`Color set to ${req.params.hex}`);
+});
 
-  // Patterns using FX codes (from WLED-like FX list)
-  rainbow: "/win&FX=37",
-  rainbowCycle: "/win&FX=38",
-  colorWipe: "/win&FX=3",
-  theaterChase: "/win&FX=5",
-  glitter: "/win&FX=44",
-  scan: "/win&FX=14",
-  twinkle: "/win&FX=51",
-  flash: "/win&FX=65",
-  fade: "/win&FX=99",
-  fire: "/win&FX=72",
-  runningLights: "/win&FX=12",
-  chaseWhite: "/win&FX=6",
-  chaseRainbow: "/win&FX=9",
-  strobe: "/win&FX=68",
-};
+app.get("/brightness/:level", async (req, res) => {
+  const level = parseInt(req.params.level);
+  await client.setBrightness(level);
+  res.send(`Brightness set to ${level}`);
+});
 
-app.get("/led/:mode", async (req, res) => {
-  const mode = req.params.mode.toLowerCase();
-
-  if (!commands[mode]) {
-    return res.status(400).send(
-      `Invalid mode.\nAvailable modes:\n${Object.keys(commands).join(", ")}`
-    );
-  }
-
-  const url = `http://${CONTROLLER_IP}${commands[mode]}`;
-
+app.get("/pattern/:id", async (req, res) => {
   try {
-    await axios.get(url);
-    res.send(`LED pattern set to "${mode}"`);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Failed to communicate with SP108E");
+    const patternId = parseInt(req.params.id);
+    if (patternId < 1 || patternId > 180) {
+      return res.status(400).send("Invalid pattern ID. Use 1-180.");
+    }
+    await client.setDreamMode(patternId);
+    res.send(`Pattern set to ${patternId}`);
+  } catch (err) {
+    console.error("Error setting pattern:", err);
+    res.status(500).send("Failed to set pattern");
   }
 });
 
-app.listen(port, () => {
-  console.log(`SP108E LED controller server running at http://localhost:${port}`);
+app.get("/speed/:value", async (req, res) => {
+  try {
+    const speed = parseInt(req.params.value);
+    if (isNaN(speed) || speed < 0 || speed > 255) {
+      return res.status(400).send("Speed must be between 0 and 255");
+    }
+    await client.setAnimationSpeed(speed);
+    res.send(`Animation speed set to ${speed}`);
+  } catch (err) {
+    console.error("Error setting speed:", err);
+    res.status(500).send("Failed to set animation speed");
+  }
 });
+
+
+app.get("/rainbow", async (req, res) => {
+  await client.setDreamMode(1); // Rainbow pattern
+  res.send("Rainbow pattern activated");
+});
+
+app.get("/next", async (req, res) => {
+  const status = await client.getStatus();
+  let next = status.animationMode + 1;
+  if (next > 180) next = 1;
+  await client.setDreamMode(next);
+  res.send(`Next pattern: ${next}`);
+});
+
+app.get("/previous", async (req, res) => {
+  const status = await client.getStatus();
+  let prev = status.animationMode - 1;
+  if (prev < 1) prev = 180;
+  await client.setDreamMode(prev);
+  res.send(`Previous pattern: ${prev}`);
+});
+
+app.listen(3000, () => console.log("Bridge running on port 3000"));
