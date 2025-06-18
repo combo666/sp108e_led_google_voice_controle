@@ -1,7 +1,7 @@
 {
-  "name": "sp108e-bridge",
+  "name": "sp108e-led-google-voice-control",
   "version": "1.0.0",
-  "description": "Control SP108E LED controller via HTTP API",
+  "description": "Control SP108E LED controller via Google Voice commands",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
